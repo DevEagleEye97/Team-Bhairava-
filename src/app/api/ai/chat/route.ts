@@ -1,46 +1,80 @@
 import { NextResponse } from "next/server"
-import { deskProjects, deskEvents, deskStudyMaterials, teamMembers, deskPolls } from "@/lib/mock-data"
+import { deskProjects, deskEvents, teamMembers } from "@/lib/mock-data"
+
+// Token-sparse keywords to identify engineering and academic coursework domains
+const ENGINEERING_KEYWORDS = [
+  "code", "program", "function", "algorithm", "data structure", "c", "python", "javascript",
+  "typescript", "sql", "postgres", "database", "api", "backend", "frontend", "react", "next",
+  "memory", "pointer", "array", "recursion", "loop", "variable", "compiler", "bitwise",
+  "math", "calculus", "taylor", "jacobian", "matrix", "derivative", "integral", "differential",
+  "physics", "quantum", "wave", "schrodinger", "optics", "energy", "electron", "mechanics",
+  "electrical", "circuit", "kvl", "kcl", "mesh", "nodal", "current", "voltage", "resistance",
+  "ia-1", "ia1", "exam", "syllabus", "psc", "design thinking", "ipr", "sprint", "task",
+  "architecture", "git", "docker", "network", "performance", "complexity", "big o",
+  "bug", "error", "debug", "deploy", "server", "desk", "overview", "status", "deadline"
+]
+
+function isEngineeringQuery(query: string): boolean {
+  const lower = query.toLowerCase()
+  return ENGINEERING_KEYWORDS.some((kw) => lower.includes(kw))
+}
 
 export async function POST(request: Request) {
   try {
     const { message, history } = await request.json()
 
-    if (!message || typeof message !== "string") {
+    if (!message || typeof message !== "string" || !message.trim()) {
       return NextResponse.json({ error: "Message is required" }, { status: 400 })
+    }
+
+    const trimmedMsg = message.trim()
+    const lower = trimmedMsg.toLowerCase()
+
+    // 1. Guardrail: Strictly restrict to engineering & technical coursework
+    // Reject out-of-the-box non-engineering queries immediately with minimal tokens
+    const isEng = isEngineeringQuery(lower)
+    const isDeskCheck = lower.includes("summary") || lower.includes("overview") || lower.includes("task") || lower.includes("sprint")
+
+    if (!isEng && !isDeskCheck) {
+      return NextResponse.json({
+        reply: "I strictly answer engineering and technical coursework questions. Please ask an engineering-related question.",
+        provider: "engineering_guardrail",
+        tokensUsed: 18,
+      })
     }
 
     const geminiKey = process.env.GEMINI_API_KEY
     const model = process.env.AI_MODEL || "gemini-2.0-flash"
 
-    // Contextual system prompt about HackForge state
-    const deskContext = {
-      workspace: "HackForge Team Desk",
-      onlineMembers: teamMembers.filter((m) => m.status === "online" || m.status === "in_flow").map((m) => `${m.name} (${m.role}): ${m.currentStatusText || "Active"}`),
-      upcomingDeadlines: deskEvents.map((e) => `${e.title} [${e.type}] - Deadline: ${e.deadline}`),
-      projects: deskProjects.map((p) => `${p.name} (${p.status}, ${p.progressPercent}% complete) with ${p.tasks.length} sprint tasks`),
-      tasks: deskProjects.flatMap((p) => p.tasks).map((t) => `${t.title} [${t.priority.toUpperCase()}] - ${t.status} (Assignee: ${t.assignee.name})`),
-      activePoll: `${deskPolls[0]?.question} (Total votes: ${deskPolls[0]?.totalVotes})`,
-      studyMaterialsCount: deskStudyMaterials.length,
-      ia1Subjects: Array.from(new Set(deskStudyMaterials.filter((m) => m.ia === "IA-1").map((m) => m.subject))),
-    }
+    // 2. Token-Minimized Compressed Desk Context (~90 tokens instead of full multi-KB JSON)
+    const activeTasksCount = deskProjects.flatMap((p) => p.tasks).filter((t) => t.status !== "done").length
+    const onlineDevs = teamMembers.filter((m) => m.status === "online" || m.status === "in_flow").map((m) => m.name).slice(0, 4).join(", ")
+    const nextDeadline = deskEvents[0] ? `${deskEvents[0].title} (${deskEvents[0].deadline})` : "None"
+    const compactContext = `Desk: Team Bhairava (Saptagiri NPS Univ). Active sprint: 75% complete, ${activeTasksCount} open tasks. Online devs: ${onlineDevs}. Next deadline: ${nextDeadline}. 17 verified IA-1 docs: PSC, Math (Calculus), Physics (Quantum), BEE (Circuits), DTI.`
 
-    // If a Google Gemini API Key is configured, query the live Gemini API
+    // 3. Live Gemini Call (Strictly token-budgeted)
     if (geminiKey && geminiKey.trim().length > 10) {
       try {
-        const systemInstruction = `You are ForgeCopilot, an intelligent AI collaborator embedded in the HackForge Digital Team Desk.
-You assist developers, student teams, and hackathon squads by:
-1. Providing executive summary overviews of active sprints, deadlines, channels, and study materials.
-2. Helping organize the dashboard by highlighting critical path tasks, upcoming deadlines, and focus areas.
-3. Answering questions about the current desk state accurately using the provided workspace context:
-${JSON.stringify(deskContext, null, 2)}
-Keep your responses concise, highly structured (using Markdown lists and bold text), and actionable.`
+        // Ultra-dense system prompt: strictly engineering, minimal tokens, NO out-of-the-box follow-up questions
+        const systemInstruction = `You are ForgeCopilot, an engineering AI assistant for Team Bhairava.
+RULES:
+1. DOMAIN: Strictly answer ONLY engineering, software engineering, programming (C, TS, Python, SQL), algorithms, mathematics, physics, and IA-1 coursework.
+2. REJECT NON-ENGINEERING: If a question is not engineering, reply only: "I strictly answer engineering and technical coursework questions. Please ask an engineering-related question."
+3. TOKEN EFFICIENCY: Be extremely concise and dense. Answer in 2-4 sentences or concise code snippets. Do NOT include greetings, preamble, conversational fluff, or filler.
+4. NO FOLLOW-UP QUESTIONS: Do NOT ask out-of-the-box follow-up questions (e.g., do not ask "Would you like...", "How can I help further?"). Deliver the factual technical answer and stop.
+Context: ${compactContext}`
+
+        // Token optimization: only pass the last 3 turns of history to prevent token bloat
+        const trimmedHistory = (history || [])
+          .slice(-3)
+          .map((h: { role: string; content: string }) => ({
+            role: h.role === "assistant" ? "model" : "user",
+            parts: [{ text: h.content.slice(0, 300) }], // limit past messages to 300 chars
+          }))
 
         const contents = [
-          ...(history || []).map((h: { role: string; content: string }) => ({
-            role: h.role === "assistant" ? "model" : "user",
-            parts: [{ text: h.content }],
-          })),
-          { role: "user", parts: [{ text: message }] },
+          ...trimmedHistory,
+          { role: "user", parts: [{ text: trimmedMsg }] },
         ]
 
         const geminiRes = await fetch(
@@ -52,8 +86,8 @@ Keep your responses concise, highly structured (using Markdown lists and bold te
               systemInstruction: { parts: [{ text: systemInstruction }] },
               contents,
               generationConfig: {
-                temperature: 0.7,
-                maxOutputTokens: 1000,
+                temperature: 0.2, // low temperature for deterministic, direct answers
+                maxOutputTokens: 250, // token budget capped at 250 tokens
               },
             }),
           }
@@ -61,88 +95,63 @@ Keep your responses concise, highly structured (using Markdown lists and bold te
 
         if (geminiRes.ok) {
           const geminiData = await geminiRes.json()
-          const reply = geminiData.candidates?.[0]?.content?.parts?.[0]?.text
+          const reply = geminiData.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
           if (reply) {
             return NextResponse.json({
               reply,
               provider: "gemini",
               model,
+              tokenBudget: 250,
             })
           }
         }
       } catch (geminiError) {
-        console.warn("Live Gemini API call failed, falling back to local desk intelligence:", geminiError)
+        console.warn("Gemini API call failed, falling back to local engineering engine:", geminiError)
       }
     }
 
-    // Contextual intelligent desk response engine (works 100% without external API key)
-    const lower = message.toLowerCase()
+    // 4. Local Deterministic Engineering Engine (Token-Dense & No Conversational Questions)
     let reply = ""
 
-    if (lower.includes("summary") || lower.includes("overview") || lower.includes("status")) {
-      reply = `### 📊 HackForge Team Desk Executive Summary
-
-**Workspace Activity:**
-- **5 active teammates** currently collaborating on the desk (Alex, Priya, Marcus, Elena, Karan).
-- **Core Sprint 01:** 75% complete on *HackForge Digital Desk*.
-
-**Key Deadlines & Hackathons:**
-- 🚨 **HackGlobal 2026: Edge Computing Edition:** Registration closes **Oct 22, 2026** ($25,000 Prize Pool).
-- 🛠️ **Supabase RLS & High-Throughput Postgres Workshop:** Live on **Oct 20, 2026**.
-
-**Academic Study Repository:**
-- **${deskStudyMaterials.length} verified study documents** loaded in the Study Room across ${deskContext.ia1Subjects.join(", ")}.
-
-**Active Pulse:**
-- Active Poll: *"${deskPolls[0]?.question}"* (${deskPolls[0]?.totalVotes} votes cast).`
-    } else if (lower.includes("organize") || lower.includes("priorit") || lower.includes("task") || lower.includes("todo")) {
-      reply = `### 🎯 Dashboard Organization & Priority Matrix
-
-Here is how I recommend organizing your sprint focus for today:
-
-1. **🔴 Urgent / High Priority (Blockers):**
-   - **Postgres EXPLAIN plan & index tuning** (Assigned to *Marcus Thorne* - Review status).
-   - **Supabase Realtime viewport channel binding** (Assigned to *Alex Vance* - In Progress).
-
-2. **🟡 In Progress (Core Deliverables):**
-   - **Mobile responsive navigation sheet & overflow guard** (Assigned to *Karan Patel*).
-   - **Context Desk right-panel poll voting** (Assigned to *Priya Sharma*).
-
-3. **🟢 Ready for Next Cycle:**
-   - **HackMIT pitch problem statement selection** (Assigned to *David Chen*).
-
-💡 *Action Tip: You can jump directly to the **Projects & Tasks** board or toggle the Right Context Desk to clear the review queue.*`
-    } else if (lower.includes("study") || lower.includes("ia") || lower.includes("pdf") || lower.includes("exam")) {
-      reply = `### 📚 Study Room & IA-1 Preparation Hub
-
-We have **17 verified documents** loaded from the IA-1 preparation repository:
-
-- **Problem Solving with C (PSC):** IA-1 Question Paper, Module 1 & 2 Lecture Notes, Module 1 & 2 Question Banks, and Revision Guide.
-- **Engineering Mathematics:** IA-1 Question Paper and Modules 1 & 2 Question Bank (Calculus, Taylor Series, Jacobians).
-- **Engineering Physics:** Module 1 Quantum Mechanics Notes, Course 25BEPHY106 & 25BEPHY105 Notes, Modules 1 & 2 Question Bank.
-- **Basic Electrical Engineering:** IA-1 Question Paper (DC Circuits, KVL/KCL, Mesh/Nodal analysis).
-- **Design Thinking & IPR:** IA-1 Preparation Guide & IPR Question Bank.
-- **Comprehensive Previous Years:** 2 Volumes of consolidated IA-1 examination papers.
-
-📖 *All documents can be viewed in-app via the new Canvas-rendered PDF.js viewer with zero browser plugin blocks!*`
+    if (lower.includes("psc") || lower.includes("c language") || lower.includes("pointer") || lower.includes("recursion")) {
+      reply = `**Problem Solving with C (IA-1 Focus):**
+- **Pointers & Memory:** Pointers store memory addresses (\`int *p = &var;\`). Dereferencing (\`*p\`) reads the value. Dynamic memory requires \`malloc()\` / \`free()\`.
+- **Recursion:** Function calling itself with a base terminating condition and recursive step (e.g., factorial, binary search).
+- **IA-1 Coverage:** Modules 1 & 2 covering Operators, Control Flow, Arrays, Strings, and Function Prototypes.`
+    } else if (lower.includes("math") || lower.includes("calculus") || lower.includes("taylor") || lower.includes("jacobian")) {
+      reply = `**Engineering Mathematics (IA-1 Focus):**
+- **Taylor Series:** $f(x) = \\sum_{n=0}^{\\infty} \\frac{f^{(n)}(a)}{n!}(x-a)^n$. Expands smooth functions around a point $a$.
+- **Jacobians:** Determinant of the partial derivatives matrix $J = \\frac{\\partial(u,v)}{\\partial(x,y)}$, used for coordinate transformations and variable changes in multiple integrals.`
+    } else if (lower.includes("physics") || lower.includes("quantum") || lower.includes("wave")) {
+      reply = `**Engineering Physics (IA-1 Focus):**
+- **Wave-Particle Duality:** De Broglie wavelength $\\lambda = \\frac{h}{p} = \\frac{h}{mv}$.
+- **Schrödinger Equation:** Time-independent form: $-\\frac{\\hbar^2}{2m}\\nabla^2\\psi + V\\psi = E\\psi$, describing quantum state probabilities in potential wells.`
+    } else if (lower.includes("bee") || lower.includes("circuit") || lower.includes("kvl") || lower.includes("kcl")) {
+      reply = `**Basic Electrical Engineering (IA-1 Focus):**
+- **KCL (Kirchhoff's Current Law):** $\\sum I_{in} = \\sum I_{out}$ at any junction (charge conservation).
+- **KVL (Kirchhoff's Voltage Law):** $\\sum V = 0$ around any closed loop (energy conservation). Use mesh analysis for planar circuits.`
+    } else if (lower.includes("summary") || lower.includes("overview") || lower.includes("status")) {
+      reply = `**Team Bhairava Sprint Status:**
+- **Velocity:** Sprint 01 is 75% complete with 5 active developers.
+- **Top Task:** Postgres index tuning and Realtime WebSocket channel sync.
+- **Academic Vault:** 17 verified IA-1 documents across PSC, Math, Physics, BEE, and DTI.`
+    } else if (lower.includes("task") || lower.includes("priorit") || lower.includes("todo")) {
+      reply = `**Engineering Priority Matrix:**
+1. **Critical:** Postgres EXPLAIN plan index tuning & Supabase RLS policies.
+2. **High:** Mobile responsive drawer & viewport layout guard.
+3. **Normal:** IA-1 question paper bank review & canvas PDF streaming.`
     } else {
-      reply = `Hello! I am **ForgeCopilot**, your digital desk assistant.
-
-I can help you:
-- **Summarize Desk Overview:** Get an instant high-level briefing on active team tasks, online members, and hackathon deadlines.
-- **Organize Dashboard:** Recommend sprint task prioritizations, highlight review bottlenecks, and track deadlines.
-- **Study Room Navigation:** Explore the 17 IA-1 course question banks, lecture notes, and formula sheets.
-
-*How can I help organize your workspace today?*`
+      reply = `**ForgeCopilot Engineering Engine:**
+Technical domain confirmed. For technical solutions, specify the algorithm, language, or IA-1 syllabus topic (C programming, Taylor series, Quantum mechanics, or Supabase architecture).`
     }
 
     return NextResponse.json({
       reply,
-      provider: "desk_intelligence",
-      configuredWithGeminiKey: Boolean(geminiKey && geminiKey.trim().length > 10),
+      provider: "engineering_engine",
+      tokenBudget: 250,
     })
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Unknown error processing AI chat"
+    const errorMsg = err instanceof Error ? err.message : "Internal error"
     return NextResponse.json({ error: errorMsg }, { status: 500 })
   }
 }

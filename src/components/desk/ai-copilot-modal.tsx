@@ -37,11 +37,9 @@ export function AiCopilotModal({ isOpen, onClose, onNavigateTab }: AiCopilotModa
     {
       id: "welcome-1",
       role: "assistant",
-      content: `👋 **Welcome to ForgeCopilot!**
+      content: `⚡ **ForgeCopilot Engineering AI**
 
-I can help you monitor team velocity, provide executive summary briefings, and organize your desk priorities for the day.
-
-Try one of the quick actions below or ask anything about your sprint!`,
+Token-optimized technical assistant strictly scoped to Engineering, Computer Science, and IA-1 coursework. Direct answers with zero conversational filler.`,
       timestamp: "Just now",
     },
   ])
@@ -71,9 +69,10 @@ Try one of the quick actions below or ask anything about your sprint!`,
     setIsLoading(true)
 
     try {
-      const historyPayload = messages.map((m) => ({
+      // Token-minimized history: only send last 3 turns
+      const historyPayload = messages.slice(-3).map((m) => ({
         role: m.role,
-        content: m.content,
+        content: m.content.slice(0, 300),
       }))
 
       const res = await fetch("/api/ai/chat", {
@@ -118,11 +117,11 @@ Try one of the quick actions below or ask anything about your sprint!`,
           <div>
             <div className="flex items-center gap-1.5">
               <span className="font-heading text-sm font-bold text-foreground">ForgeCopilot</span>
-              <Badge variant="outline" className="text-[9px] py-0 h-4 border-indigo-500/30 text-indigo-500">
-                AI Desk Assistant
+              <Badge variant="outline" className="text-[9px] py-0 h-4 border-indigo-500/30 text-indigo-400">
+                Engineering AI • Low-Token
               </Badge>
             </div>
-            <span className="text-[10px] text-muted-foreground">Desk Summary & Dashboard Organizer</span>
+            <span className="text-[10px] text-muted-foreground">Strict Engineering Scope • Token-Efficient</span>
           </div>
         </div>
 
@@ -131,33 +130,33 @@ Try one of the quick actions below or ask anything about your sprint!`,
         </Button>
       </div>
 
-      {/* Quick Action Suggestion Chips */}
+      {/* Quick Action Suggestion Chips - Strictly Engineering Topics */}
       <div className="flex items-center gap-1.5 overflow-x-auto px-3 py-2 border-b border-border/60 bg-muted/20 scrollbar-none">
         <button
           type="button"
-          onClick={() => handleSend("Give me an executive summary overview of the workspace")}
-          className="shrink-0 flex items-center gap-1 rounded-full border border-border bg-card/80 px-2.5 py-1 text-[10px] font-medium text-foreground hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-colors"
-        >
-          <LayoutDashboard className="size-3 text-indigo-500" />
-          Summary Overview
-        </button>
-
-        <button
-          type="button"
-          onClick={() => handleSend("How should we organize and prioritize our dashboard tasks today?")}
-          className="shrink-0 flex items-center gap-1 rounded-full border border-border bg-card/80 px-2.5 py-1 text-[10px] font-medium text-foreground hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-colors"
-        >
-          <Zap className="size-3 text-amber-500" />
-          Organize Tasks
-        </button>
-
-        <button
-          type="button"
-          onClick={() => handleSend("What study materials and IA-1 question papers do we have?")}
+          onClick={() => handleSend("Explain C pointers, dynamic memory allocation, and IA-1 PSC question bank topics")}
           className="shrink-0 flex items-center gap-1 rounded-full border border-border bg-card/80 px-2.5 py-1 text-[10px] font-medium text-foreground hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-colors"
         >
           <BookOpen className="size-3 text-sky-500" />
-          IA-1 Study Prep
+          PSC & Pointers (C)
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleSend("Explain Taylor series expansion and Jacobians for Engineering Mathematics IA-1")}
+          className="shrink-0 flex items-center gap-1 rounded-full border border-border bg-card/80 px-2.5 py-1 text-[10px] font-medium text-foreground hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-colors"
+        >
+          <Zap className="size-3 text-amber-500" />
+          Taylor Series & Jacobians
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleSend("What are the highest priority engineering tasks and sprint blockers for Team Bhairava?")}
+          className="shrink-0 flex items-center gap-1 rounded-full border border-border bg-card/80 px-2.5 py-1 text-[10px] font-medium text-foreground hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-colors"
+        >
+          <LayoutDashboard className="size-3 text-indigo-500" />
+          Sprint Priority Tasks
         </button>
       </div>
 
