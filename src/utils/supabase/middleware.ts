@@ -71,10 +71,10 @@ export const createClient = async (request: NextRequest) => {
     return NextResponse.redirect(redirectUrl)
   }
 
-  // 2. Authenticated user visiting /, /login, /signup, or /forgot-password -> redirect to destination
-  if (user && (isAuthPath || pathname === "/")) {
+  // 2. Authenticated user visiting auth entry pages (/login, /signup, /forgot-password) -> redirect to destination
+  if (user && isAuthPath) {
     const rawNext = request.nextUrl.searchParams.get("next")
-    const safeDestination = sanitizeInternalRedirect(rawNext, "/desk")
+    const safeDestination = sanitizeInternalRedirect(rawNext, "/dashboard")
     const redirectUrl = new URL(safeDestination, request.url)
     return NextResponse.redirect(redirectUrl)
   }
