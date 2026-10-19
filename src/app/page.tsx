@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation"
+import { InvestmentLandingPage } from "@/components/landing/investment-landing"
 
 export default function Home() {
-  redirect("/login")
+  return <InvestmentLandingPage />
 }
