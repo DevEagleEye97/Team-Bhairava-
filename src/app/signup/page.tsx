@@ -86,7 +86,7 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="relative min-h-screen w-full flex flex-col justify-between bg-zinc-950 text-zinc-100 selection:bg-indigo-500/30 selection:text-indigo-200">
+    <div className="relative min-h-screen w-full flex flex-col justify-between bg-zinc-950/40 backdrop-blur-[2px] text-zinc-100 selection:bg-indigo-500/30 selection:text-indigo-200">
       {/* Top Header */}
       <header className="relative z-10 w-full border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-md px-6 py-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3 group">

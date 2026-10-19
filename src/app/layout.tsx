@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { StarryBackground } from "@/components/ui/starry-background";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -26,7 +27,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground">
+      <body className="min-h-full flex flex-col bg-transparent text-foreground relative">
+        <StarryBackground />
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"

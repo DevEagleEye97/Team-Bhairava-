@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { AnalogClockWidget } from "@/components/widgets/analog-clock-widget"
 import { toast } from "sonner"
 
 interface DeskRightPanelProps {
@@ -203,6 +204,14 @@ export function DeskRightPanel({
         ) : (
           /* STANDARD: Persistent Context Dashboard (Upcoming Events, Active Poll, Resources) */
           <>
+            {/* Live Analog Clock Widget */}
+            <div className="flex justify-center pb-1">
+              <AnalogClockWidget
+                variant="minimal"
+                className="w-full max-w-[240px] h-40 bg-card/90 border-border/80"
+              />
+            </div>
+
             {/* 1. Upcoming Events & Opportunities */}
             <div className="space-y-2.5">
               <div className="flex items-center justify-between">

@@ -186,7 +186,7 @@ export function DeskShell() {
   const activeChannel = deskChannels.find((c) => c.id === activeTab)
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-background font-sans text-foreground">
+    <div className="flex h-screen w-full overflow-hidden bg-background/80 backdrop-blur-sm font-sans text-foreground">
       {/* 1. Left Sidebar: Fixed 260px on desktop (≥1024px) */}
       <DeskSidebar
         activeTab={activeTab}

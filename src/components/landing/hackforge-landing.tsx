@@ -148,7 +148,7 @@ export function HackForgeLandingPage() {
   const [selectedSubject, setSelectedSubject] = React.useState<StudySubject>(FEATURED_SUBJECTS[0])
 
   return (
-    <div className="min-h-screen bg-[#08090d] text-zinc-100 selection:bg-blue-600/30 selection:text-blue-200 font-sans antialiased relative overflow-x-hidden">
+    <div className="min-h-screen bg-[#08090d]/50 text-zinc-100 selection:bg-blue-600/30 selection:text-blue-200 font-sans antialiased relative overflow-x-hidden">
       {/* Ambient background glows matching Vestia layout */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[550px] bg-gradient-to-b from-blue-600/12 via-indigo-600/8 to-transparent blur-[140px] pointer-events-none -z-10" />
       <div className="absolute top-[400px] right-0 w-[500px] h-[400px] bg-blue-500/10 blur-[120px] pointer-events-none -z-10" />
