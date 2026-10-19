@@ -11,10 +11,13 @@ import {
   KeyRound,
   Eye,
   EyeOff,
+  Cpu,
+  ExternalLink,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { toast } from "sonner"
 import { createClient } from "@/utils/supabase/client"
@@ -32,6 +35,12 @@ export default function AccountSettingsPage() {
   const [isUpdatingPassword, setIsUpdatingPassword] = React.useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false)
   const [deleteConfirmationText, setDeleteConfirmationText] = React.useState("")
+  const [oauthGrants, setOauthGrants] = React.useState<Array<{
+    client: { id: string; name: string; uri?: string; logo_uri?: string }
+    scopes: string[]
+    granted_at: string
+  }>>([])
+  const [isRevokingClientId, setIsRevokingClientId] = React.useState<string | null>(null)
 
   React.useEffect(() => {
     async function loadUser() {
@@ -46,11 +55,43 @@ export default function AccountSettingsPage() {
           const d = new Date(user.created_at)
           setCreatedDate(d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }))
         }
+
+        // Fetch authorized OAuth 2.1 grants
+        try {
+          if (supabase.auth.oauth?.listGrants) {
+            const { data } = await supabase.auth.oauth.listGrants()
+            if (data && Array.isArray(data)) {
+              setOauthGrants(data)
+            }
+          }
+        } catch {
+          // OAuth grants API may return empty if none authorized
+        }
       }
     }
 
     loadUser()
   }, [supabase])
+
+  const handleRevokeOAuthGrant = async (clientId: string, clientName: string) => {
+    setIsRevokingClientId(clientId)
+    try {
+      if (supabase.auth.oauth?.revokeGrant) {
+        const { error } = await supabase.auth.oauth.revokeGrant({ clientId })
+        if (error) {
+          toast.error(`Failed to revoke grant: ${error.message}`)
+          return
+        }
+        setOauthGrants((prev) => prev.filter((g) => g.client.id !== clientId))
+        toast.success(`Revoked access for ${clientName}`)
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Revocation failed"
+      toast.error(msg)
+    } finally {
+      setIsRevokingClientId(null)
+    }
+  }
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -233,6 +274,82 @@ export default function AccountSettingsPage() {
               <span>Sign Out</span>
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Authorized OAuth 2.1 Applications */}
+      <Card className="border border-zinc-800 bg-zinc-900/60">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-sm font-semibold text-zinc-200 flex items-center gap-2">
+                <Cpu className="size-4 text-indigo-400" />
+                <span>Authorized OAuth Applications</span>
+              </CardTitle>
+              <CardDescription className="text-xs text-zinc-400 mt-1">
+                Third-party tools and MCP agents connected through Team Bhairava&apos;s OAuth 2.1 Server.
+              </CardDescription>
+            </div>
+            <Badge
+              variant="outline"
+              className="text-[10px] font-mono border-zinc-800 text-zinc-400 bg-zinc-950/60"
+            >
+              OAuth 2.1
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {oauthGrants.length === 0 ? (
+            <div className="p-4 rounded-lg border border-dashed border-zinc-800/80 bg-zinc-950/40 text-center space-y-1">
+              <p className="text-xs text-zinc-400">No external applications currently authorized.</p>
+              <p className="text-[11px] text-zinc-500">
+                When you authorize developer tools, IDE extensions, or MCP servers via <code className="text-zinc-300 font-mono">/oauth/consent</code>, they will appear here.
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-zinc-800/80 rounded-lg border border-zinc-800 bg-zinc-950/60 overflow-hidden">
+              {oauthGrants.map((grant) => (
+                <div key={grant.client.id} className="p-3 flex items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-zinc-200">{grant.client.name}</span>
+                      {grant.client.uri && (
+                        <a
+                          href={grant.client.uri}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-zinc-500 hover:text-indigo-300"
+                        >
+                          <ExternalLink className="size-3" />
+                        </a>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[10px] text-zinc-500">Granted:</span>
+                      {grant.scopes.map((scope) => (
+                        <Badge
+                          key={scope}
+                          variant="outline"
+                          className="text-[9px] font-mono px-1.5 py-0 border-zinc-800 text-zinc-400 bg-zinc-900"
+                        >
+                          {scope}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isRevokingClientId === grant.client.id}
+                    onClick={() => handleRevokeOAuthGrant(grant.client.id, grant.client.name)}
+                    className="h-7 text-xs border-zinc-800 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300"
+                  >
+                    {isRevokingClientId === grant.client.id ? "Revoking..." : "Revoke Access"}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
