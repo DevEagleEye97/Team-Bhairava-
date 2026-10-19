@@ -28,7 +28,7 @@ function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const rawNext = searchParams.get("next")
-  const targetDestination = sanitizeInternalRedirect(rawNext, "/desk")
+  const targetDestination = sanitizeInternalRedirect(rawNext, "/dashboard")
 
   const supabase = React.useMemo(() => createClient(), [])
 

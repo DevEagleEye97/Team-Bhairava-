@@ -561,7 +561,7 @@ export function HackForgeLandingPage() {
 
           {/* Grid of Subject Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {FEATURED_SUBJECTS.map((subject) => (
+            {FEATURED_SUBJECTS.filter((s) => activeTab === "all" || s.code.toLowerCase() === activeTab.toLowerCase()).map((subject) => (
               <Card
                 key={subject.code}
                 className="border border-zinc-800/70 bg-zinc-900/50 hover:bg-zinc-900/80 hover:border-zinc-700 transition-all shadow-md group"
