@@ -1,5 +1,5 @@
-import { DeskShell } from "@/components/desk/desk-shell"
+import { redirect } from "next/navigation"
 
 export default function Home() {
-  return <DeskShell />
+  redirect("/login")
 }

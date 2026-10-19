@@ -136,19 +136,21 @@ export function StudyRoomView({
 
   // Open PDF viewer with server-authorized short-lived signed URL or inline stream
   const handleOpenPdf = async (item: StudyMaterial) => {
-    setViewingMaterial(item)
-    setViewerUrl(null)
-
     try {
       const res = await fetch(`/api/study-materials/${encodeURIComponent(item.id)}/view?format=url`)
       if (!res.ok) {
-        throw new Error("Authorization failed")
+        const errPayload = await res.json().catch(() => null)
+        toast.error(
+          errPayload?.message ||
+            `Document "${item.title}" is pending upload to the Supabase storage vault.`
+        )
+        return
       }
       const data = await res.json()
+      setViewingMaterial(item)
       setViewerUrl(data.signedUrl)
     } catch {
-      toast.error("Could not authorize document viewer. Using direct secure stream.")
-      setViewerUrl(`/api/study-materials/${encodeURIComponent(item.id)}/view`)
+      toast.error(`Could not connect to document storage vault for "${item.title}".`)
     }
   }
 

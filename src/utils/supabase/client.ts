@@ -7,4 +7,16 @@ export const createClient = () =>
   createBrowserClient(
     supabaseUrl!,
     supabaseKey!,
+    {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+      cookieOptions: {
+        maxAge: 60 * 60 * 24 * 30, // 30 days persistent login session
+        path: "/",
+        sameSite: "lax",
+      },
+    }
   )

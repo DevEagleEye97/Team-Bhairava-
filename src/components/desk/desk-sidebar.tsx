@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 import {
   LayoutDashboard,
   MessageSquare,
@@ -16,12 +17,18 @@ import {
   Sun,
   Moon,
   Laptop,
-  Radio,
+  GraduationCap,
+  LogOut,
+  User,
+  Settings,
+  Shield,
+  Building2,
 } from "lucide-react"
 import { useTheme } from "next-themes"
+import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { NavigationTab } from "@/types/desk"
-import { currentWorkspace, currentUser, deskChannels } from "@/lib/mock-data"
+import { deskChannels } from "@/lib/mock-data"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -33,6 +40,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { createClient } from "@/utils/supabase/client"
+import { toast } from "sonner"
 
 interface DeskSidebarProps {
   activeTab: NavigationTab
@@ -52,11 +61,62 @@ export function DeskSidebar({
   onCloseMobile,
 }: DeskSidebarProps) {
   const { theme, setTheme } = useTheme()
+  const router = useRouter()
+  const supabase = React.useMemo(() => createClient(), [])
+
+  // Dynamic profile state loaded from Supabase Auth
+  const [profileName, setProfileName] = React.useState("Om")
+  const [profileRole, setProfileRole] = React.useState("Team Lead")
+  const [profileHandle, setProfileHandle] = React.useState("@om")
+
+  React.useEffect(() => {
+    async function fetchAuthProfile() {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+
+        if (user) {
+          const meta = user.user_metadata || {}
+          if (meta.full_name) setProfileName(meta.full_name)
+          if (meta.role) setProfileRole(meta.role)
+          if (meta.handle) setProfileHandle(meta.handle)
+
+          const { data: dbProfile } = await supabase
+            .from("profiles")
+            .select("full_name, handle, status_text")
+            .eq("id", user.id)
+            .maybeSingle()
+
+          if (dbProfile) {
+            if (dbProfile.full_name) setProfileName(dbProfile.full_name)
+            if (dbProfile.handle) setProfileHandle(dbProfile.handle)
+            if (dbProfile.status_text) setProfileRole(dbProfile.status_text)
+          }
+        }
+      } catch (err) {
+        console.warn("Could not load authenticated profile:", err)
+      }
+    }
+
+    fetchAuthProfile()
+  }, [supabase])
 
   const handleNav = (tab: NavigationTab) => {
     onSelectTab(tab)
     if (onCloseMobile) {
       onCloseMobile()
+    }
+  }
+
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut()
+      toast.success("Signed out successfully.")
+      router.push("/login")
+      router.refresh()
+    } catch {
+      router.push("/login")
     }
   }
 
@@ -73,11 +133,18 @@ export function DeskSidebar({
       case "ideas-discussions":
         return <Lightbulb className="size-4 shrink-0 text-yellow-500" />
       case "study-room":
-        return <Headphones className="size-4 shrink-0 text-indigo-500" />
+        return <Headphones className="size-4 shrink-0 text-indigo-400" />
       default:
         return <MessageSquare className="size-4 shrink-0 text-muted-foreground" />
     }
   }
+
+  const initials = profileName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase() || "OM"
 
   return (
     <aside
@@ -91,22 +158,22 @@ export function DeskSidebar({
       <div className="flex h-14 items-center justify-between border-b border-border px-3">
         {!isCollapsed ? (
           <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary font-bold text-xs text-primary-foreground shadow-xs">
-              {currentWorkspace.logoText}
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-indigo-600 font-bold text-xs text-white shadow-xs">
+              TB
             </div>
             <div className="flex flex-col truncate">
               <span className="font-semibold text-sm leading-tight text-foreground truncate">
-                {currentWorkspace.name}
+                Team Bhairava
               </span>
-              <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-                {currentWorkspace.onlineCount} online
+              <span className="flex items-center gap-1 text-[11px] text-muted-foreground truncate">
+                <GraduationCap className="size-3 text-indigo-400 shrink-0" />
+                Saptagiri NPS Univ
               </span>
             </div>
           </div>
         ) : (
-          <div className="mx-auto flex size-8 items-center justify-center rounded-lg bg-primary font-bold text-xs text-primary-foreground">
-            {currentWorkspace.logoText}
+          <div className="mx-auto flex size-8 items-center justify-center rounded-lg bg-indigo-600 font-bold text-xs text-white">
+            TB
           </div>
         )}
 
@@ -130,7 +197,7 @@ export function DeskSidebar({
             type="button"
             onClick={() => handleNav("dashboard")}
             className={cn(
-              "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-colors",
+              "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-colors cursor-pointer",
               activeTab === "dashboard"
                 ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -159,155 +226,223 @@ export function DeskSidebar({
                 type="button"
                 onClick={() => handleNav(tabKey)}
                 className={cn(
-                  "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs transition-colors",
+                  "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer group",
                   isActive
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                    : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
                 title={channel.name}
               >
-                <div className="flex items-center gap-2.5 truncate">
+                <div className="flex items-center gap-2 overflow-hidden">
                   {getChannelIcon(channel.slug)}
                   {!isCollapsed && <span className="truncate">{channel.name}</span>}
                 </div>
-                {!isCollapsed && channel.unreadCount && (
+
+                {!isCollapsed && channel.unreadCount && channel.unreadCount > 0 ? (
                   <Badge
                     variant="secondary"
-                    className="h-4 px-1.5 text-[10px] font-semibold bg-primary/10 text-primary"
+                    className="ml-auto size-4 p-0 text-[10px] font-mono font-bold flex items-center justify-center rounded-full bg-primary/20 text-primary"
                   >
                     {channel.unreadCount}
                   </Badge>
-                )}
+                ) : null}
               </button>
             )
           })}
         </div>
 
-        {/* Modules Section */}
+        {/* Focus & Collaboration Modules */}
         <div className="space-y-1">
           {!isCollapsed && (
             <div className="px-2 pb-1 text-[10px] font-semibold tracking-wider text-muted-foreground/80 uppercase">
-              Collaboration Desks
+              Academic & Sprints
             </div>
           )}
 
-          {/* Events Board */}
           <button
             type="button"
-            onClick={() => handleNav("events")}
+            onClick={() => handleNav("channel-study")}
             className={cn(
-              "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs transition-colors",
-              activeTab === "events"
-                ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+              "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer",
+              activeTab === "channel-study"
+                ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
-            title="Events & Opportunities"
+            title="Study Room & IA-1 Question Banks"
           >
-            <CalendarDays className="size-4 shrink-0 text-sky-500" />
-            {!isCollapsed && <span className="truncate">Events & Opportunities</span>}
+            <div className="flex items-center gap-2 overflow-hidden">
+              <Headphones className="size-4 shrink-0 text-indigo-400" />
+              {!isCollapsed && <span className="truncate">Study Room (IA-1)</span>}
+            </div>
+            {!isCollapsed && (
+              <Badge variant="outline" className="text-[9px] py-0 px-1 border-indigo-500/30 text-indigo-400">
+                Verified
+              </Badge>
+            )}
           </button>
 
-          {/* Projects & Tasks */}
           <button
             type="button"
             onClick={() => handleNav("projects")}
             className={cn(
-              "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs transition-colors",
+              "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer",
               activeTab === "projects"
-                ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
             title="Projects & Tasks"
           >
-            <FolderGit2 className="size-4 shrink-0 text-emerald-500" />
+            <FolderGit2 className="size-4 shrink-0 text-muted-foreground" />
             {!isCollapsed && <span className="truncate">Projects & Tasks</span>}
           </button>
 
-          {/* Knowledge Base */}
+          <button
+            type="button"
+            onClick={() => handleNav("events")}
+            className={cn(
+              "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer",
+              activeTab === "events"
+                ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            )}
+            title="Events & Opportunities"
+          >
+            <CalendarDays className="size-4 shrink-0 text-muted-foreground" />
+            {!isCollapsed && <span className="truncate">Events & Calendar</span>}
+          </button>
+
           <button
             type="button"
             onClick={() => handleNav("knowledge")}
             className={cn(
-              "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs transition-colors",
+              "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer",
               activeTab === "knowledge"
-                ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
-            title="Shared Knowledge Base"
+            title="Team Knowledge Base"
           >
-            <BookOpen className="size-4 shrink-0 text-amber-500" />
+            <BookOpen className="size-4 shrink-0 text-muted-foreground" />
             {!isCollapsed && <span className="truncate">Knowledge Base</span>}
           </button>
         </div>
       </div>
 
-      {/* Desk Status Pill */}
+      {/* Honest Scope Banner */}
       {!isCollapsed && (
-        <div className="mx-2 mb-2 rounded-lg border border-border/80 bg-background/50 p-2.5">
-          <div className="flex items-center gap-1.5 text-[11px] font-medium text-foreground">
-            <Radio className="size-3.5 text-emerald-500 animate-pulse" />
-            <span>Digital Desk Live</span>
+        <div className="mx-2 mb-2 rounded-lg border border-border/60 bg-muted/30 p-2.5">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+            <GraduationCap className="size-3.5 text-indigo-400" />
+            <span>Semester 1, P-Cycle</span>
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground leading-snug">
-            Local session mode active. 5 teammates working on sprint items.
+          <p className="mt-1 text-[10px] text-muted-foreground leading-snug">
+            Verified IA-1 course syllabi, question banks & Shvasa Pomodoro co-working.
           </p>
         </div>
       )}
 
-      {/* Current User & Theme Footer */}
+      {/* Current User & Settings Footer */}
       <div className="border-t border-border p-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 overflow-hidden">
-            <div className="relative">
-              <Avatar className="size-8 rounded-lg border border-border">
-                <AvatarFallback className="text-xs font-semibold bg-primary/10 text-primary">
-                  {currentUser.avatar}
-                </AvatarFallback>
-              </Avatar>
-              <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-sidebar bg-emerald-500" />
-            </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="w-full flex items-center justify-between p-1.5 rounded-lg hover:bg-muted/60 transition-colors text-left cursor-pointer group"
+              title="Open account & profile menu"
+            >
+              <div className="flex items-center gap-2 overflow-hidden">
+                <Avatar className="size-8 rounded-lg border border-border bg-indigo-950/40 text-indigo-300 font-mono text-xs font-semibold">
+                  <AvatarFallback>{initials}</AvatarFallback>
+                </Avatar>
 
-            {!isCollapsed && (
-              <div className="flex flex-col truncate">
-                <span className="text-xs font-medium text-foreground truncate">
-                  {currentUser.name}
-                </span>
-                <span className="text-[10px] text-muted-foreground truncate">
-                  {currentUser.role} Desk
-                </span>
+                {!isCollapsed && (
+                  <div className="flex flex-col truncate">
+                    <span className="text-xs font-medium text-foreground truncate group-hover:text-indigo-400 transition-colors">
+                      {profileName}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground truncate">
+                      {profileRole}
+                    </span>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          {!isCollapsed && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon-xs" title="Toggle theme">
-                  {theme === "light" ? (
-                    <Sun className="size-3.5" />
-                  ) : theme === "dark" ? (
-                    <Moon className="size-3.5" />
-                  ) : (
-                    <Laptop className="size-3.5" />
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel className="text-xs">Appearance</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setTheme("light")} className="text-xs gap-2">
-                  <Sun className="size-3.5" /> Light
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme("dark")} className="text-xs gap-2">
-                  <Moon className="size-3.5" /> Dark
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme("system")} className="text-xs gap-2">
-                  <Laptop className="size-3.5" /> System Default
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
+              {!isCollapsed && (
+                <Settings className="size-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+              )}
+            </button>
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel className="text-xs">
+              <div className="font-semibold text-foreground">{profileName}</div>
+              <div className="text-[10px] text-muted-foreground font-mono">{profileHandle}</div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/settings/profile" className="text-xs gap-2 cursor-pointer">
+                <User className="size-3.5 text-indigo-400" />
+                <span>Personal Profile</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/settings/account" className="text-xs gap-2 cursor-pointer">
+                <Shield className="size-3.5 text-emerald-400" />
+                <span>Account & Security</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/settings/preferences" className="text-xs gap-2 cursor-pointer">
+                <Settings className="size-3.5 text-zinc-400" />
+                <span>Preferences</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/settings/workspace" className="text-xs gap-2 cursor-pointer">
+                <Building2 className="size-3.5 text-amber-400" />
+                <span>Team Workspace</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-[10px] uppercase font-mono text-muted-foreground">
+              Theme Mode
+            </DropdownMenuLabel>
+            <div className="grid grid-cols-3 gap-1 px-1 py-1">
+              <Button
+                variant={theme === "light" ? "secondary" : "ghost"}
+                size="icon-xs"
+                onClick={() => setTheme("light")}
+                title="Light mode"
+              >
+                <Sun className="size-3" />
+              </Button>
+              <Button
+                variant={theme === "dark" ? "secondary" : "ghost"}
+                size="icon-xs"
+                onClick={() => setTheme("dark")}
+                title="Dark mode"
+              >
+                <Moon className="size-3" />
+              </Button>
+              <Button
+                variant={theme === "system" ? "secondary" : "ghost"}
+                size="icon-xs"
+                onClick={() => setTheme("system")}
+                title="System theme"
+              >
+                <Laptop className="size-3" />
+              </Button>
+            </div>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={handleSignOut}
+              className="text-xs gap-2 text-destructive focus:text-destructive cursor-pointer"
+            >
+              <LogOut className="size-3.5" />
+              <span>Sign Out</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </aside>
   )
