@@ -1,18 +1,11 @@
 import { createServerClient } from "@supabase/ssr"
 import { type NextRequest, NextResponse } from "next/server"
+import { sanitizeInternalRedirect } from "@/utils/redirect"
+
+export { sanitizeInternalRedirect }
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-
-// Helper to validate internal redirect paths and avoid open redirect vulnerabilities
-export function sanitizeInternalRedirect(target: string | null, fallback = "/desk"): string {
-  if (!target) return fallback
-  // Must start with single slash, not double slash (protocol-relative URL)
-  if (target.startsWith("/") && !target.startsWith("//")) {
-    return target
-  }
-  return fallback
-}
 
 export const createClient = async (request: NextRequest) => {
   let supabaseResponse = NextResponse.next({

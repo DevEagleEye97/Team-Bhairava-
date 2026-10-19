@@ -22,7 +22,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
 import { toast } from "sonner"
 import { createClient } from "@/utils/supabase/client"
-import { sanitizeInternalRedirect } from "@/utils/supabase/middleware"
+import { sanitizeInternalRedirect } from "@/utils/redirect"
 
 function LoginForm() {
   const router = useRouter()
