@@ -148,9 +148,9 @@ export function InvestmentLandingPage() {
             <a href="#learn" className="hover:text-white transition-colors">
               Learn
             </a>
-            <Link href="/desk" className="hover:text-blue-400 transition-colors flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-300">
+            <Link href="/dashboard" className="hover:text-blue-400 transition-colors flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-300">
               <Sparkles className="size-3" />
-              <span>Team Desk</span>
+              <span>Dashboard</span>
             </Link>
           </nav>
 
@@ -162,7 +162,7 @@ export function InvestmentLandingPage() {
             >
               Log In
             </Link>
-            <Link href="/signup">
+            <Link href="/login?next=/dashboard">
               <Button
                 size="sm"
                 className="bg-blue-600 hover:bg-blue-500 text-white font-medium px-4 h-9 rounded-lg shadow-md shadow-blue-600/25 transition-all text-xs cursor-pointer"
@@ -226,7 +226,7 @@ export function InvestmentLandingPage() {
 
             {/* Action Buttons */}
             <div className="flex flex-wrap items-center gap-3.5 pt-2">
-              <Link href="/signup">
+              <Link href="/login?next=/dashboard">
                 <Button
                   size="lg"
                   className="h-11 px-6 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-medium shadow-lg shadow-blue-600/30 transition-all text-sm gap-2 cursor-pointer"
@@ -235,13 +235,13 @@ export function InvestmentLandingPage() {
                   <ArrowRight className="size-4" />
                 </Button>
               </Link>
-              <Link href="/desk">
+              <Link href="/dashboard">
                 <Button
                   size="lg"
                   variant="outline"
                   className="h-11 px-6 rounded-xl border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 hover:text-white transition-all text-sm cursor-pointer"
                 >
-                  View Demo
+                  View Dashboard
                 </Button>
               </Link>
             </div>
@@ -389,10 +389,10 @@ export function InvestmentLandingPage() {
                     <span>Real-time WebSocket Data</span>
                   </span>
                   <Link
-                    href="/login"
+                    href="/dashboard"
                     className="text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1"
                   >
-                    <span>Full Analytics</span>
+                    <span>Full Dashboard</span>
                     <ChevronRight className="size-3" />
                   </Link>
                 </div>
@@ -691,8 +691,8 @@ export function InvestmentLandingPage() {
             <Link href="/login" className="hover:text-white transition-colors">
               Client Portal
             </Link>
-            <Link href="/desk" className="hover:text-blue-400 transition-colors">
-              Team Desk
+            <Link href="/dashboard" className="hover:text-blue-400 transition-colors">
+              Dashboard
             </Link>
           </div>
         </div>
