@@ -121,13 +121,29 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    -webkit-tap-highlight-color: transparent;
+  }
+  html {
+    @apply font-sans;
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
   }
   body {
     background-color: transparent;
     color: var(--foreground);
+    overscroll-behavior-y: none;
+    touch-action: manipulation;
   }
-  html {
-    @apply font-sans;
+  /* Momentum 120fps scrolling on iOS & Android */
+  .overflow-y-auto,
+  .overflow-x-auto,
+  main,
+  aside {
+    -webkit-overflow-scrolling: touch;
+    will-change: scroll-position;
   }
 }
 

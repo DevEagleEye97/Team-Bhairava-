@@ -72,13 +72,19 @@ export function DeskSidebar({
   React.useEffect(() => {
     async function fetchAuthProfile() {
       try {
+        const savedLocal = typeof window !== "undefined" ? localStorage.getItem("hf_user_name") : null
+        if (savedLocal) setProfileName(savedLocal)
+
         const {
           data: { user },
         } = await supabase.auth.getUser()
 
         if (user) {
           const meta = user.user_metadata || {}
-          if (meta.full_name) setProfileName(meta.full_name)
+          if (meta.full_name) {
+            setProfileName(meta.full_name)
+            localStorage.setItem("hf_user_name", meta.full_name)
+          }
           if (meta.role) setProfileRole(meta.role)
           if (meta.handle) setProfileHandle(meta.handle)
 

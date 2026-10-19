@@ -23,10 +23,38 @@ import { StudyRoomView } from "@/components/desk/study-room-view"
 import { QuickActionModal } from "@/components/desk/quick-action-modal"
 import { AiCopilotModal } from "@/components/desk/ai-copilot-modal"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
+import { useRouter } from "next/navigation"
+import { createClient } from "@/utils/supabase/client"
+import { TerminalLoader } from "@/components/ui/terminal-loader"
 import { Sparkles } from "lucide-react"
 import { toast } from "sonner"
 
 export function DeskShell() {
+  const router = useRouter()
+  const [isAuthenticated, setIsAuthenticated] = React.useState<boolean | null>(null)
+
+  React.useEffect(() => {
+    async function verifyAuth() {
+      try {
+        const supabase = createClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        const savedEmail = typeof window !== "undefined" ? localStorage.getItem("hf_saved_email") : null
+        const sessionUserId = typeof window !== "undefined" ? localStorage.getItem("hf_session_user_id") : null
+
+        if (session || (savedEmail && sessionUserId)) {
+          setIsAuthenticated(true)
+        } else {
+          setIsAuthenticated(false)
+          router.replace("/login?next=/dashboard")
+        }
+      } catch {
+        router.replace("/login?next=/dashboard")
+      }
+    }
+
+    verifyAuth()
+  }, [router])
+
   const [activeTab, setActiveTab] = React.useState<NavigationTab>("dashboard")
   const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false)
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = React.useState(false)
@@ -184,6 +212,18 @@ export function DeskShell() {
 
   // Active channel resolution
   const activeChannel = deskChannels.find((c) => c.id === activeTab)
+
+  if (isAuthenticated === null) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-transparent">
+        <TerminalLoader title="HackForge Security Gateway" text="Verifying credentials..." />
+      </div>
+    )
+  }
+
+  if (isAuthenticated === false) {
+    return null
+  }
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background/80 backdrop-blur-sm font-sans text-foreground">

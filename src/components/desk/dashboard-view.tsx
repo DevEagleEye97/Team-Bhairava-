@@ -12,6 +12,9 @@ import {
   Radio,
   GraduationCap,
   Headphones,
+  Pencil,
+  Check,
+  X,
 } from "lucide-react"
 import { NavigationTab, Poll } from "@/types/desk"
 import {
@@ -21,6 +24,7 @@ import {
   deskStudyMaterials,
 } from "@/lib/mock-data"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -37,18 +41,25 @@ export function DashboardView({ onNavigateTab, onOpenQuickAction }: DashboardVie
 
   const [userName, setUserName] = React.useState("Om")
   const [userRole, setUserRole] = React.useState("Lead")
+  const [isEditingName, setIsEditingName] = React.useState(false)
+  const [newNameInput, setNewNameInput] = React.useState("")
+  const [isSavingName, setIsSavingName] = React.useState(false)
 
   React.useEffect(() => {
     async function loadAuth() {
       try {
+        const localSavedName = typeof window !== "undefined" ? localStorage.getItem("hf_user_name") : null
+        if (localSavedName) {
+          setUserName(localSavedName)
+        }
+
         const {
           data: { user },
         } = await supabase.auth.getUser()
 
         if (user) {
-          if (user.user_metadata?.full_name) {
-            setUserName(user.user_metadata.full_name)
-          }
+          let resolvedName = user.user_metadata?.full_name || localSavedName
+
           if (user.user_metadata?.role) {
             setUserRole(user.user_metadata.role)
           }
@@ -59,9 +70,16 @@ export function DashboardView({ onNavigateTab, onOpenQuickAction }: DashboardVie
             .eq("id", user.id)
             .maybeSingle()
 
-          if (profile) {
-            if (profile.full_name) setUserName(profile.full_name)
-            if (profile.status_text) setUserRole(profile.status_text)
+          if (profile?.full_name) {
+            resolvedName = profile.full_name
+          }
+          if (profile?.status_text) {
+            setUserRole(profile.status_text)
+          }
+
+          if (resolvedName) {
+            setUserName(resolvedName)
+            localStorage.setItem("hf_user_name", resolvedName)
           }
         }
       } catch (err) {
@@ -71,6 +89,50 @@ export function DashboardView({ onNavigateTab, onOpenQuickAction }: DashboardVie
 
     loadAuth()
   }, [supabase])
+
+  const handleStartEditName = () => {
+    setNewNameInput(userName)
+    setIsEditingName(true)
+  }
+
+  const handleSaveName = async () => {
+    const trimmed = newNameInput.trim()
+    if (!trimmed) {
+      toast.error("Please enter a valid name.")
+      return
+    }
+
+    setIsSavingName(true)
+    try {
+      setUserName(trimmed)
+      localStorage.setItem("hf_user_name", trimmed)
+
+      // 1. Automatically update Supabase Auth user metadata
+      await supabase.auth.updateUser({
+        data: { full_name: trimmed },
+      })
+
+      // 2. Persist to Supabase public.profiles table
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (user) {
+        await supabase.from("profiles").upsert({
+          id: user.id,
+          full_name: trimmed,
+          updated_at: new Date().toISOString(),
+        })
+      }
+
+      setIsEditingName(false)
+      toast.success(`Name updated to "${trimmed}" and saved in Supabase!`)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to save name."
+      toast.error(msg)
+    } finally {
+      setIsSavingName(false)
+    }
+  }
 
   // Local state for interactive poll voting
   const [activePoll, setActivePoll] = React.useState<Poll>(deskPolls[0])
@@ -148,14 +210,60 @@ export function DashboardView({ onNavigateTab, onOpenQuickAction }: DashboardVie
               </span>
               <span className="text-xs text-muted-foreground">Sprint 01 in Progress</span>
             </div>
-            <h1 className="font-heading text-xl md:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-              <span>Welcome back, {userName}</span>
-              {userRole && (
-                <span className="text-xs px-2 py-0.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-400 font-normal">
-                  {userRole}
-                </span>
+            <div className="flex items-center gap-2">
+              {isEditingName ? (
+                <div className="flex items-center gap-1.5 py-1">
+                  <Input
+                    value={newNameInput}
+                    onChange={(e) => setNewNameInput(e.target.value)}
+                    placeholder="Enter your name"
+                    className="h-8 w-44 sm:w-56 text-sm bg-zinc-900 border-zinc-700 text-zinc-100"
+                    autoFocus
+                    disabled={isSavingName}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSaveName()
+                      if (e.key === "Escape") setIsEditingName(false)
+                    }}
+                  />
+                  <Button
+                    size="sm"
+                    className="h-8 px-2.5 bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer"
+                    onClick={handleSaveName}
+                    disabled={isSavingName}
+                    title="Save name to Supabase"
+                  >
+                    <Check className="size-3.5" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 px-2 text-zinc-400 hover:text-white cursor-pointer"
+                    onClick={() => setIsEditingName(false)}
+                    disabled={isSavingName}
+                    title="Cancel"
+                  >
+                    <X className="size-3.5" />
+                  </Button>
+                </div>
+              ) : (
+                <h1 className="font-heading text-xl md:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+                  <span>Welcome back, {userName}</span>
+                  <button
+                    type="button"
+                    onClick={handleStartEditName}
+                    title="Edit name (saves automatically to Supabase)"
+                    className="text-zinc-500 hover:text-indigo-400 p-1 rounded-md transition-colors cursor-pointer"
+                  >
+                    <Pencil className="size-3.5" />
+                  </button>
+                  {userRole && (
+                    <span className="text-xs px-2 py-0.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-400 font-normal">
+                      {userRole}
+                    </span>
+                  )}
+                </h1>
               )}
-            </h1>
+            </div>
             <p className="text-xs md:text-sm text-muted-foreground max-w-2xl leading-relaxed flex items-center gap-1.5">
               <GraduationCap className="size-4 text-indigo-400 shrink-0" />
               <span>Saptagiri NPS University • CSE General • Semester 1, P-Cycle (IA-1 Context)</span>

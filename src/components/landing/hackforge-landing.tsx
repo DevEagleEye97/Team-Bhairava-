@@ -194,32 +194,23 @@ export function HackForgeLandingPage() {
             </Link>
           </nav>
 
-          {/* Action CTAs: Both Sign-In, Sign-Up, and Launch Dashboard clearly available */}
+          {/* Action CTAs: Verified Access only via Sign-In and Sign-Up */}
           <div className="flex items-center gap-2">
             <Link href="/login">
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-800/70 h-9 px-3 rounded-lg transition-colors cursor-pointer"
+                className="text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-800/70 h-9 px-3.5 rounded-lg transition-colors cursor-pointer"
               >
                 Sign In
               </Button>
             </Link>
             <Link href="/signup">
               <Button
-                variant="outline"
-                size="sm"
-                className="text-xs font-medium border-zinc-700 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-200 h-9 px-3.5 rounded-lg transition-colors cursor-pointer"
-              >
-                Sign Up
-              </Button>
-            </Link>
-            <Link href="/dashboard">
-              <Button
                 size="sm"
                 className="bg-blue-600 hover:bg-blue-500 text-white font-medium px-4 h-9 rounded-lg shadow-md shadow-blue-600/25 transition-all text-xs cursor-pointer gap-1.5"
               >
-                <span>Dashboard</span>
+                <span>Sign Up</span>
                 <ArrowRight className="size-3" />
               </Button>
             </Link>
@@ -272,15 +263,15 @@ export function HackForgeLandingPage() {
               with embedded Pomodoro OS.
             </p>
 
-            {/* Action Buttons: Direct Dashboard, Sign Up, and Sign In accessible right from hero */}
+            {/* Action Buttons: Sign In and Sign Up required for workspace access */}
             <div className="flex flex-wrap items-center gap-3 pt-2">
-              <Link href="/dashboard">
+              <Link href="/login">
                 <Button
                   size="lg"
                   className="h-11 px-6 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-medium shadow-lg shadow-blue-600/30 transition-all text-sm gap-2 cursor-pointer"
                 >
-                  <Sparkles className="size-4" />
-                  <span>Open Dashboard</span>
+                  <Lock className="size-4" />
+                  <span>Sign In to Desk</span>
                   <ArrowRight className="size-4" />
                 </Button>
               </Link>
@@ -290,17 +281,8 @@ export function HackForgeLandingPage() {
                   variant="outline"
                   className="h-11 px-5 rounded-xl border-zinc-700 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-200 hover:text-white transition-all text-sm cursor-pointer gap-2"
                 >
-                  <span>Sign Up</span>
-                </Button>
-              </Link>
-              <Link href="/login">
-                <Button
-                  size="lg"
-                  variant="ghost"
-                  className="h-11 px-4 text-xs text-zinc-400 hover:text-white hover:bg-zinc-800/60 gap-1.5"
-                >
-                  <span>Sign In</span>
-                  <ChevronRight className="size-3.5" />
+                  <ShieldCheck className="size-4 text-emerald-400" />
+                  <span>Sign Up / Join Team</span>
                 </Button>
               </Link>
             </div>

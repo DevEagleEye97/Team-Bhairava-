@@ -300,25 +300,6 @@ export default function SignUpPage() {
                           </>
                         )}
                       </Button>
-
-                      <div className="relative flex py-1 items-center">
-                        <div className="flex-grow border-t border-zinc-800" />
-                        <span className="flex-shrink mx-2 text-[10px] text-zinc-500 uppercase font-mono">or demo access</span>
-                        <div className="flex-grow border-t border-zinc-800" />
-                      </div>
-
-                      <Button
-                        type="button"
-                        asChild
-                        variant="outline"
-                        className="w-full h-8 text-xs font-medium border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 transition-colors gap-2 cursor-pointer"
-                      >
-                        <Link href="/dashboard">
-                          <Sparkles className="size-3.5 text-emerald-400" />
-                          <span>Enter Original Dashboard Directly</span>
-                          <ArrowRight className="size-3.5" />
-                        </Link>
-                      </Button>
                     </form>
                   </>
                 )

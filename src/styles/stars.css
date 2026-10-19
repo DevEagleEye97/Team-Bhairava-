@@ -11,6 +11,11 @@
   overflow: hidden;
   pointer-events: none;
   z-index: -50;
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 #stars {
@@ -2103,10 +2108,12 @@
 
 @keyframes animStar {
   from {
-    transform: translateY(0px);
+    transform: translate3d(0, 0px, 0);
+    -webkit-transform: translate3d(0, 0px, 0);
   }
   to {
-    transform: translateY(-2000px);
+    transform: translate3d(0, -2000px, 0);
+    -webkit-transform: translate3d(0, -2000px, 0);
   }
 }
 

@@ -92,6 +92,31 @@ function LoginForm() {
       if (data.user) {
         localStorage.setItem("hf_session_user_id", data.user.id)
         localStorage.setItem("hf_session_user_email", data.user.email || "")
+
+        // Sync saved name from Supabase user_metadata or profiles table
+        let savedName = data.user.user_metadata?.full_name
+        if (!savedName) {
+          try {
+            const { data: prof } = await supabase
+              .from("profiles")
+              .select("full_name")
+              .eq("id", data.user.id)
+              .maybeSingle()
+            if (prof?.full_name) {
+              savedName = prof.full_name
+            }
+          } catch {
+            // fallback
+          }
+        }
+
+        if (savedName) {
+          localStorage.setItem("hf_user_name", savedName)
+        } else {
+          const emailPrefix = (data.user.email || "").split("@")[0]
+          const capitalized = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1)
+          localStorage.setItem("hf_user_name", capitalized)
+        }
       }
 
       toast.success("Welcome back! Entering Team Bhairava Desk...")
@@ -255,26 +280,6 @@ function LoginForm() {
                       <ArrowRight className="size-3.5" />
                     </>
                   )}
-                </Button>
-
-                <div className="relative flex py-1.5 items-center">
-                  <div className="flex-grow border-t border-zinc-800" />
-                  <span className="flex-shrink mx-2 text-[10px] text-zinc-500 uppercase font-mono">or instant access</span>
-                  <div className="flex-grow border-t border-zinc-800" />
-                </div>
-
-                <Button
-                  type="button"
-                  onClick={() => {
-                    toast.success("Entering original Team Bhairava Desk...")
-                    router.push(targetDestination)
-                  }}
-                  variant="outline"
-                  className="w-full h-8 text-xs font-medium border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 transition-colors gap-2 cursor-pointer"
-                >
-                  <Sparkles className="size-3.5 text-indigo-400" />
-                  <span>Enter Original Dashboard Directly</span>
-                  <ArrowRight className="size-3.5" />
                 </Button>
               </form>
 
