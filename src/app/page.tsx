@@ -1,5 +1,5 @@
-import { InvestmentLandingPage } from "@/components/landing/investment-landing"
+import { HackForgeLandingPage } from "@/components/landing/hackforge-landing"
 
 export default function Home() {
-  return <InvestmentLandingPage />
+  return <HackForgeLandingPage />
 }
