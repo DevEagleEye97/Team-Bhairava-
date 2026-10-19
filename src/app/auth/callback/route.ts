@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createClient } from "@/utils/supabase/server"
-import { sanitizeInternalRedirect } from "@/utils/supabase/middleware"
+import { sanitizeInternalRedirect } from "@/utils/redirect"
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
