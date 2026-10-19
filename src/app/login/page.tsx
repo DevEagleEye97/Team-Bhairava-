@@ -15,6 +15,7 @@ import {
   CheckSquare,
   Square,
   UserPlus,
+  Sparkles,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -254,6 +255,26 @@ function LoginForm() {
                       <ArrowRight className="size-3.5" />
                     </>
                   )}
+                </Button>
+
+                <div className="relative flex py-1.5 items-center">
+                  <div className="flex-grow border-t border-zinc-800" />
+                  <span className="flex-shrink mx-2 text-[10px] text-zinc-500 uppercase font-mono">or instant access</span>
+                  <div className="flex-grow border-t border-zinc-800" />
+                </div>
+
+                <Button
+                  type="button"
+                  onClick={() => {
+                    toast.success("Entering original Team Bhairava Desk...")
+                    router.push(targetDestination)
+                  }}
+                  variant="outline"
+                  className="w-full h-8 text-xs font-medium border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 transition-colors gap-2 cursor-pointer"
+                >
+                  <Sparkles className="size-3.5 text-indigo-400" />
+                  <span>Enter Original Dashboard Directly</span>
+                  <ArrowRight className="size-3.5" />
                 </Button>
               </form>
 

@@ -49,12 +49,8 @@ export const createClient = async (request: NextRequest) => {
 
   const pathname = request.nextUrl.pathname
 
-  // Protected application routes
-  const isProtectedPath =
-    pathname.startsWith("/desk") ||
-    pathname.startsWith("/dashboard") ||
-    pathname.startsWith("/settings") ||
-    pathname.startsWith("/admin")
+  // Protected application routes (admin requires strict authentication)
+  const isProtectedPath = pathname.startsWith("/admin")
 
   // Auth entry routes
   const isAuthPath =

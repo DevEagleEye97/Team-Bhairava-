@@ -194,23 +194,32 @@ export function HackForgeLandingPage() {
             </Link>
           </nav>
 
-          {/* Action CTAs: Both Sign-In and Sign-Up clearly available in top bar */}
-          <div className="flex items-center gap-2.5">
+          {/* Action CTAs: Both Sign-In, Sign-Up, and Launch Dashboard clearly available */}
+          <div className="flex items-center gap-2">
             <Link href="/login">
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-800/70 h-9 px-3.5 rounded-lg transition-colors cursor-pointer"
+                className="text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-800/70 h-9 px-3 rounded-lg transition-colors cursor-pointer"
               >
                 Sign In
               </Button>
             </Link>
             <Link href="/signup">
               <Button
+                variant="outline"
+                size="sm"
+                className="text-xs font-medium border-zinc-700 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-200 h-9 px-3.5 rounded-lg transition-colors cursor-pointer"
+              >
+                Sign Up
+              </Button>
+            </Link>
+            <Link href="/dashboard">
+              <Button
                 size="sm"
                 className="bg-blue-600 hover:bg-blue-500 text-white font-medium px-4 h-9 rounded-lg shadow-md shadow-blue-600/25 transition-all text-xs cursor-pointer gap-1.5"
               >
-                <span>Sign Up</span>
+                <span>Dashboard</span>
                 <ArrowRight className="size-3" />
               </Button>
             </Link>
@@ -263,33 +272,34 @@ export function HackForgeLandingPage() {
               with embedded Pomodoro OS.
             </p>
 
-            {/* Action Buttons: Sign In and Sign Up accessible right from hero */}
+            {/* Action Buttons: Direct Dashboard, Sign Up, and Sign In accessible right from hero */}
             <div className="flex flex-wrap items-center gap-3 pt-2">
-              <Link href="/signup">
+              <Link href="/dashboard">
                 <Button
                   size="lg"
                   className="h-11 px-6 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-medium shadow-lg shadow-blue-600/30 transition-all text-sm gap-2 cursor-pointer"
                 >
-                  <span>Sign Up / Join Team</span>
+                  <Sparkles className="size-4" />
+                  <span>Open Dashboard</span>
                   <ArrowRight className="size-4" />
+                </Button>
+              </Link>
+              <Link href="/signup">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="h-11 px-5 rounded-xl border-zinc-700 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-200 hover:text-white transition-all text-sm cursor-pointer gap-2"
+                >
+                  <span>Sign Up</span>
                 </Button>
               </Link>
               <Link href="/login">
                 <Button
                   size="lg"
-                  variant="outline"
-                  className="h-11 px-6 rounded-xl border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 hover:text-white transition-all text-sm cursor-pointer"
-                >
-                  Sign In to Desk
-                </Button>
-              </Link>
-              <Link href="/dashboard">
-                <Button
-                  size="lg"
                   variant="ghost"
-                  className="h-11 px-4 text-xs text-zinc-400 hover:text-blue-300 gap-1.5"
+                  className="h-11 px-4 text-xs text-zinc-400 hover:text-white hover:bg-zinc-800/60 gap-1.5"
                 >
-                  <span>View Demo</span>
+                  <span>Sign In</span>
                   <ChevronRight className="size-3.5" />
                 </Button>
               </Link>
